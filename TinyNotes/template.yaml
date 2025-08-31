@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: TinyNotes - minimal API (Lambda + API Gateway)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 6
+    MemorySize: 256
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      TracingEnabled: true
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          MetricsEnabled: true
+      Auth:
+        ApiKeyRequired: true
+
+  TinyNotesFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: app.main.handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        Any:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /{proxy+}
+            Method: any
+            Auth:
+              ApiKeyRequired: true
