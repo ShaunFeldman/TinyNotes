@@ -113,13 +113,12 @@ async def create_note(
     # return saved response if key was used
     with STORE_LOCK:
         saved = IDEMPOTENCY.get("create_note", {}).get(idem_key)
-        if saved:
-            return JSONResponse(saved, status_code=201)
+    if saved:
+        return JSONResponse(saved, status_code=201)
 
     note = NoteOut(id=str(uuid.uuid4())[:8], content=body.content, createdAt=now())
-    with STORE_LOCK:
-        NOTES.append(note)
-        IDEMPOTENCY.setdefault("create_note", {})[idem_key] = note.model_dump()
+    NOTES.append(note)
+    IDEMPOTENCY.setdefault("create_note", {})[idem_key] = note.model_dump()
     return JSONResponse(note.model_dump(), status_code=201)
 
 @app.get("/notes", response_model=List[NoteOut])
